@@ -1,0 +1,8 @@
+Input 40
+Layers 2
+N_layer_1 100
+N_layer_2 100
+Funct tanh
+Corr_fact 0.1
+B 1
+Output 1
