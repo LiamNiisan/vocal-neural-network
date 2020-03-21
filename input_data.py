@@ -9,6 +9,21 @@ data_filename = __location__ + '/data_60/data_'
 nn_config_filename = __location__ + '/nn_config.txt'
 output_filename = __location__ + '/output'
 
+
+def write_input(input, layer, nbLayer1, nbLayer2, funct, corrFact, b, output):
+    f = open(nn_config_filename, "w")
+    texte = "Input " + str(input) + "\n"
+    texte += "Layers " + str(layer) + "\n"
+    texte += "N_layer_1 " + str(nbLayer1) + "\n"
+    texte += "N_layer_2 " + str(nbLayer2) + "\n"
+    texte += "Funct " + str(funct) + "\n"
+    texte += "Corr_fact " + str(corrFact) + "\n"
+    texte += "B " + str(b) + "\n"
+    texte += "Output " + str(output) + "\n"
+    f.write(texte)
+    f.close()
+
+
 def get_config():
 
     settings = {}
