@@ -10,10 +10,19 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from input_data import write_input
 from main import apprentissage
+import threading
 
+def threadFunction(interface):
+    apprentissage()
+    interface.resetButtonState()
 
 class Ui_InterfaceWindow(object):
+
     def clickedRunButton(self):
+        self.runButton.setText("Loading...")
+        self.runButton.setEnabled(False)
+
+        #configuration des inputs
         input = self.inputComboBox.currentText()
         layer = self.layerSpin.value()
         nbLayer1 = self.nbLayer1Spin.value()
@@ -22,10 +31,12 @@ class Ui_InterfaceWindow(object):
         corrFact = self.corrFactSpin.value()
         b = 1
         output = self.outputSpinBox.value()
-        print(input + " "+str(layer)+" "+str(nbLayer1)+" "+str(nbLayer2)+" "+funct+" "+str(corrFact)+" "+str(output))
+
         write_input(input, layer, nbLayer1, nbLayer2, funct, corrFact, b, output)
-        apprentissage()
-        print("done")
+
+        threadApprentissage = threading.Thread(target=threadFunction, args=(self,))
+        threadApprentissage.start()
+        #self.threadResetButtonState.start()
 
     def changedLayersValue(self):
         if self.layerSpin.value() == 1:
@@ -155,6 +166,10 @@ class Ui_InterfaceWindow(object):
         self.label_7.setText(_translate("InterfaceWindow", "Nombre de neuronne couche 2 :"))
         self.label_8.setText(_translate("InterfaceWindow", "Nombre de couches"))
         self.label_9.setText(_translate("InterfaceWindow", "Taux d\'apprentissage"))
+
+    def resetButtonState(self):
+        self.runButton.setText("Run")
+        self.runButton.setEnabled(True)
 
 
 if __name__ == "__main__":
