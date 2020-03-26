@@ -8,35 +8,86 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QSizePolicy
 from input_data import write_input
 from main import apprentissage
 import threading
 
-def threadFunction(interface):
-    apprentissage()
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+import numpy as np
+
+
+def threadFunction(interface, nbEpoch, errorPlot, update_status_bar):
+    apprentissage(nbEpoch, errorPlot, update_status_bar)
+    interface.errorPlot.plot()
     interface.resetButtonState()
 
-class Ui_InterfaceWindow(object):
+
+class Canvas(FigureCanvas):
+    def __init__(self, parent=None, width=5, height=5, dpi=100, nbEpoch=10):
+        fig = Figure(figsize=(width, height), dpi=dpi)
+
+        self.axes = fig.add_subplot(111)
+        self.axes.set_title('Erreur en fonction de l\'Epoch')
+        self.axes.set_ylabel('(%)')
+        self.axes.set_xlabel('Epoch')
+        self.axes.set_ylim(ymax=100, ymin=0)
+
+        self.number_of_data = 0
+        self.x_data = np.array([])
+        self.update_number_of_data(nbEpoch)
+        self.axes.set_xlim(xmin=1)
+
+        self.data_train = np.zeros(self.number_of_data)
+        self.data_vc = np.zeros(self.number_of_data)
+        self.data_test = np.zeros(self.number_of_data)
+
+        FigureCanvas.__init__(self, fig)
+        self.setParent(parent)
+
+        self.plot()
+
+    def plot(self):
+        self.axes.plot(self.x_data, self.data_train, label="Train data")
+        self.axes.plot(self.x_data, self.data_vc, label="VC data")
+        self.axes.plot(self.x_data, self.data_test, label="Test data")
+        self.draw()
+
+    def fillData(self, data_train, data_vc, data_test, nbEpoch):
+        self.update_number_of_data(nbEpoch)
+        self.data_vc = data_vc
+        self.data_test = data_test
+        self.data_train = data_train
+
+    def update_number_of_data(self, number_of_data):
+        self.number_of_data = number_of_data
+        self.x_data = np.arange(stop=self.number_of_data+1, start=1)
+        self.axes.set_xlim(xmax=self.number_of_data)
+
+
+
+class Ui_InterfaceWindow():
 
     def clickedRunButton(self):
         self.runButton.setText("Loading...")
         self.runButton.setEnabled(False)
 
         #configuration des inputs
-        input = self.inputComboBox.currentText()
-        layer = self.layerSpin.value()
-        nbLayer1 = self.nbLayer1Spin.value()
-        nbLayer2 = self.nbLayer2Spin.value()
-        funct = self.funcComboBox.currentText()
-        corrFact = self.corrFactSpin.value()
-        b = 1
-        output = self.outputSpinBox.value()
+        write_input(self.inputComboBox.currentText(),
+                    self.layerSpin.value(),
+                    self.nbLayer1Spin.value(),
+                    self.nbLayer2Spin.value(),
+                    self.funcComboBox.currentText(),
+                    self.corrFactSpin.value(),
+                    1,
+                    self.outputSpinBox.value())
 
-        write_input(input, layer, nbLayer1, nbLayer2, funct, corrFact, b, output)
+        nbEpoch = self.epochSpin.value()
 
-        threadApprentissage = threading.Thread(target=threadFunction, args=(self,))
+        threadApprentissage = threading.Thread(target=threadFunction,
+                                               args=(self, nbEpoch, self.errorPlot, self.update_status_bar))
         threadApprentissage.start()
-        #self.threadResetButtonState.start()
 
     def changedLayersValue(self):
         if self.layerSpin.value() == 1:
@@ -48,7 +99,7 @@ class Ui_InterfaceWindow(object):
 
     def setupUi(self, InterfaceWindow):
         InterfaceWindow.setObjectName("InterfaceWindow")
-        InterfaceWindow.resize(704, 355)
+        InterfaceWindow.resize(830, 450)
         self.centralwidget = QtWidgets.QWidget(InterfaceWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.parametreGroupBox = QtWidgets.QGroupBox(self.centralwidget)
@@ -135,6 +186,11 @@ class Ui_InterfaceWindow(object):
         self.corrFactSpin.setSingleStep(0.05)
         self.corrFactSpin.setProperty("value", 0.1)
         self.corrFactSpin.setObjectName("corrFactSpin")
+
+        #----------ERROR PLOT ------------------
+        self.errorPlot = Canvas(InterfaceWindow, width=5, height=4, nbEpoch=self.epochSpin.value())
+        self.errorPlot.move(320, 10)
+
         InterfaceWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(InterfaceWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 704, 22))
@@ -170,6 +226,9 @@ class Ui_InterfaceWindow(object):
     def resetButtonState(self):
         self.runButton.setText("Run")
         self.runButton.setEnabled(True)
+
+    def update_status_bar(self, message):
+        self.statusbar.showMessage(message)
 
 
 if __name__ == "__main__":

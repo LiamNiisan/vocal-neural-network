@@ -1,8 +1,10 @@
 import input_data as ind
 import neural_network as nn
+import numpy as np
 
 
-def apprentissage():
+def apprentissage(nbEpoch, errorPlot, update_status_bar):
+    update_status_bar("Obtention des parametres de configuration, les inputs et outputs...")
     settings = ind.get_config()
     input_data_nb = int(settings['Input'])
     output_file_nb = int(settings['Output'])
@@ -22,9 +24,16 @@ def apprentissage():
     test_voice_data_stat = ind.get_static(test_voice_data)
     test_voice_energy_stat = ind.get_stat_energy(test_voice_data)
 
+    update_status_bar("Creation du reseau de neuronne...")
+    neural_net = nn.NeuralNetwork(settings, train_voice_data_stat, vc_voice_data_stat, test_voice_data_stat, output_data[::-1])
 
-    neural_net = nn.NeuralNetwork(settings, train_voice_data_stat, vc_voice_data_stat, train_voice_data_stat, output_data[::-1])
+    neural_net.nn_learning_process(nbEpoch, update_status_bar)
 
+    error_train = np.zeros(nbEpoch)
+    error_vc = np.asarray(neural_net.vc_error_array)
+    error_test = np.asarray(neural_net.test_error_array)
 
-    neural_net.nn_learning_process()
+    update_status_bar("affichage des resultats...")
+    errorPlot.fillData(error_train, error_vc, error_test, nbEpoch)
 
+    update_status_bar("Done")

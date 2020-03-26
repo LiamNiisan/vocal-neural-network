@@ -23,6 +23,9 @@ class NeuralNetwork:
         self.i_value = []
         self.a_value = []
         self.epoch = 0
+        #test
+        self.vc_error_array = []
+        self.test_error_array = []
 
 
     def set_weights(self, nb_source_layer, nb_destination_layer, layer):
@@ -294,25 +297,24 @@ class NeuralNetwork:
 
 
 
-    def nn_learning_process(self):
+    def nn_learning_process(self, nbEpoch, update_status_bar):
 
         random.seed(66)
         random.shuffle(self.train_data)
 
         self.set_weights_all_layers()
-
-        vc_error_array = []
-        test_error_array = []
         
-        for i in range(0,10):
-            
+        for i in range(0, nbEpoch):
+            update_status_bar("Apprentissage en cours (epoch #"+ str(i+1) + ") ...")
             self.learning_phase()
 
+            update_status_bar("Validation croisee en cours (epoch #" + str(i+1) + ") ...")
             vc_error = self.testing_phase('vc')
-            vc_error_array.append(vc_error)
+            self.vc_error_array.append(vc_error)
 
+            update_status_bar("Testage en cours (epoch #" + str(i+1) + ") ...")
             test_error = self.testing_phase()
-            test_error_array.append(test_error)
+            self.test_error_array.append(test_error)
 
             self.epoch += 1
 
