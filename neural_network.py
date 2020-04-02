@@ -1,6 +1,7 @@
 import random
 import math
 import numpy as np
+import json
 
 class NeuralNetwork:
 
@@ -18,11 +19,16 @@ class NeuralNetwork:
         self.func = settings['Funct']
         self.corr_fact = float(settings['Corr_fact'])
         self.weights = []
+        self.previous_weights = []
         self.current_value = []
         self.current_output = []
         self.i_value = []
         self.a_value = []
         self.epoch = 0
+        self.test_error = []
+        self.vc_error = []
+        self.train_error = []
+        self.save_folder = 'data/'
 
 
     def set_weights(self, nb_source_layer, nb_destination_layer, layer):
@@ -127,9 +133,9 @@ class NeuralNetwork:
         der_array = []
         for a in a_array:
 
-            der_array.append( a * (1 -a))
+            der_array.append(a * (1 -a))
 
-        return der_array
+        return np.array(der_array)
 
 
     def der_tanh_func(self, i_array):
@@ -163,37 +169,41 @@ class NeuralNetwork:
 
         exit_data = a_array
 
-        self.current_output, self.i_value, self.a_value = exit_data, i_array_all, a_array_all
+        self.current_output, self.i_value, self.a_value = np.array(exit_data), np.array(i_array_all), np.array(a_array_all)
 
 
     def get_signal_error(self):
 
         error_1 = 0 
 
+        #Calculer l'erreur a partir de la sortie
         if (self.func == 'sig'):
             error_1 = (self.desired_output - self.current_output) * self.der_sig_func(self.current_output)
         elif (self.func == 'tanh'):
             error_1 = (self.desired_output - self.current_output) * self.der_tanh_func(self.current_output)
 
-
+        #Se rappeler de la derniere couche d'erreur calculee
         last_layer_error = error_1
 
         all_error_array = []
         all_error_array.append(error_1)
 
-        for layer in range(0, self.h_layers):
+        #On passe par chaque couche a partir de la sortie, -1 pour ne pas inclue la sortie
+        for layer in range(self.h_layers-1,-1,-1):
 
             der_func = 0
 
             if (self.func == 'sig'):
-                der_func = (self.der_sig_func(self.a_value[1-layer]))
+                der_func = (self.der_sig_func(self.a_value[layer]))
             elif (self.func == 'tanh'):
-                der_func = (self.der_tanh_func(self.i_value[1-layer]))
+                der_func = (self.der_tanh_func(self.i_value[layer]))
 
+            #zip permet de transposer la matrice des poids
             error_calc_weight = []
-            for w in zip(*(self.weights[2-layer])):
+            for w in zip(*(self.weights[layer+1])):
                 n_weight = w * last_layer_error
                 error_calc_weight.append(sum(n_weight))
+
             error = der_func * error_calc_weight
             last_layer_error = error
             all_error_array.append(error)
@@ -222,19 +232,24 @@ class NeuralNetwork:
         new_weights = []
         correction = []
 
+        #Phase 3, calcul du facteur de correction
+        #Premierement le facteur est calculé à partir de l'entree
         corr = self.calculate_corr(self.current_value, error[0])
         correction.append(corr)
 
+        #Le reste du facteur est calcule à partir de la 
         for i in range(1, len(error)):
             
             corr = self.calculate_corr(self.a_value[i-1], error[i])
             correction.append(corr)
 
+        #Phase 4, le facteur est additionné au poids
         for i in range(0, len(correction)):
 
             w = list(zip(*self.weights[i]))
             new_weights.append(np.add(w, correction[i]))
 
+        #Les matrices des poids sont remises en format standard après avoir été transposée
         i_new_weights = []
         for w in new_weights:
             
@@ -252,12 +267,13 @@ class NeuralNetwork:
                 v.des_out = 0
 
             current_d_output = int(v.des_out)
-            self.current_value = v.voice_data
-            self.desired_output = self.all_desired_output[current_d_output]
+            self.current_value = np.array(v.voice_data)
+            self.desired_output = np.array(self.all_desired_output[current_d_output])
             
             self.activation_stage()
 
             error = self.get_signal_error()
+            self.previous_weights.append(self.weights)
             self.weights = self.adjust_weights(error)
 
     
@@ -274,6 +290,10 @@ class NeuralNetwork:
 
             test_data = self.vc_data
 
+        elif data == 'train':
+
+            test_data = self.train_data
+
         for v in test_data:
 
             if v.des_out == 'o':
@@ -281,17 +301,58 @@ class NeuralNetwork:
                 v.des_out = 0
 
             current_d_output = int(v.des_out)
-            self.current_value = v.voice_data
-            self.desired_output = self.all_desired_output[current_d_output]
+            self.current_value = np.array(v.voice_data)
+            self.desired_output = np.array(self.all_desired_output[current_d_output])
             
             self.activation_stage()
 
-            error = self.get_signal_error()
+            delta = self.desired_output - self.current_output
+            s_delta = self.average(np.abs(delta))
+            error = s_delta * 100
 
-            error_array.append(self.average(error[-1]) * 100)
+            error_array.append(error)
 
         return self.average(error_array)
 
+
+    def save_nn_status(self):
+
+        weights_json_str = json.dumps(self.previous_weights)
+        a_json_str = json.dumps(self.a_value.tolist())
+
+        train_error_json_str = json.dumps(self.train_error)
+        vc_error_json_str = json.dumps(self.vc_error)
+        test_error_json_str = json.dumps(self.test_error)
+        
+        current_train_error_json_str = json.dumps(self.train_error[self.epoch])
+        current_vc_error_json_str = json.dumps(self.vc_error[self.epoch])
+        current_test_error_json_str = json.dumps(self.test_error[self.epoch])
+
+        with open(self.save_folder + "NN_weights.json", "w") as text_file:
+            print(weights_json_str, file=text_file)
+
+        with open(self.save_folder + "NN_a.json", "w") as text_file:
+            print(a_json_str, file=text_file)
+
+
+        with open(self.save_folder + "Train_error.json", "w") as text_file:
+            print(train_error_json_str, file=text_file)
+
+        with open(self.save_folder + "VC_error.json", "w") as text_file:
+            print(vc_error_json_str, file=text_file)
+
+        with open(self.save_folder + "Test_error.json", "w") as text_file:
+            print(test_error_json_str, file=text_file)
+
+
+        with open(self.save_folder + "Train_error_current.json", "w") as text_file:
+            print(current_train_error_json_str, file=text_file)
+
+        with open(self.save_folder + "VC_error_current.json", "w") as text_file:
+            print(current_vc_error_json_str, file=text_file)
+
+        with open(self.save_folder + "Test_error_current.json", "w") as text_file:
+            print(current_test_error_json_str, file=text_file)
 
 
     def nn_learning_process(self):
@@ -300,23 +361,35 @@ class NeuralNetwork:
         random.shuffle(self.train_data)
 
         self.set_weights_all_layers()
-
-        vc_error_array = []
-        test_error_array = []
         
-        for i in range(0,10):
+        train_error, test_error, vc_error, i = 0, 0 ,0 ,0
+        
+        while test_error < 95 and self.epoch <= int(self.settings['Epochs']):
             
             self.learning_phase()
 
+            train_error = self.testing_phase('train')
+            self.train_error.append(train_error)
+
             vc_error = self.testing_phase('vc')
-            vc_error_array.append(vc_error)
+            self.vc_error.append(vc_error)
 
             test_error = self.testing_phase()
-            test_error_array.append(test_error)
+            self.test_error.append(test_error)
 
+            if(test_error < 15 and self.corr_fact != 0.05 and self.corr_fact != 0.01):
+
+                self.corr_fact = 0.05
+
+            elif(test_error < 10 and self.corr_fact != 0.01):
+
+                self.corr_fact = 0.01
+
+            self.save_nn_status()
             self.epoch += 1
 
-        return 1
+        
+
 
 
 
