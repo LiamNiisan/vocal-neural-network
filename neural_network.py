@@ -317,7 +317,8 @@ class NeuralNetwork:
 
     def save_nn_status(self):
 
-        weights_json_str = json.dumps(self.previous_weights)
+        #weights_json_str = json.dumps(self.previous_weights)
+        current_weights_json_str = json.dumps(self.weights)
         a_json_str = json.dumps(self.a_value.tolist())
 
         train_error_json_str = json.dumps(self.train_error)
@@ -328,8 +329,11 @@ class NeuralNetwork:
         current_vc_error_json_str = json.dumps(self.vc_error[self.epoch])
         current_test_error_json_str = json.dumps(self.test_error[self.epoch])
 
-        with open(self.save_folder + "NN_weights.json", "w") as text_file:
-            print(weights_json_str, file=text_file)
+        #with open(self.save_folder + "NN_weights.json", "w") as text_file:
+        #    print(weights_json_str, file=text_file)
+
+        with open(self.save_folder + "NN_weights_current.json", "w") as text_file:
+            print(current_weights_json_str, file=text_file)
 
         with open(self.save_folder + "NN_a.json", "w") as text_file:
             print(a_json_str, file=text_file)
