@@ -10,7 +10,7 @@ nn_config_filename = __location__ + '/nn_config.txt'
 output_filename = __location__ + '/output'
 
 
-def write_input(input, layer, nbLayer1, nbLayer2, funct, corrFact, b, output):
+def write_input(input, layer, nbLayer1, nbLayer2, funct, corrFact, b, output, epoch):
     f = open(nn_config_filename, "w")
     texte = "Input " + str(input) + "\n"
     texte += "Layers " + str(layer) + "\n"
@@ -20,6 +20,7 @@ def write_input(input, layer, nbLayer1, nbLayer2, funct, corrFact, b, output):
     texte += "Corr_fact " + str(corrFact) + "\n"
     texte += "B " + str(b) + "\n"
     texte += "Output " + str(output) + "\n"
+    texte += "Epochs " + str(epoch) + "\n"
     f.write(texte)
     f.close()
 
@@ -69,7 +70,6 @@ def get_output_data(file_nb=1):
     return output_list
 
 
-
 def get_static(all_voice_data):
     
     all_voice_data_stat = []
@@ -78,7 +78,6 @@ def get_static(all_voice_data):
         all_voice_data_stat.append(stat_voice_data)
 
     return all_voice_data_stat
-
 
 
 def get_stat_data(data, nb=26):
