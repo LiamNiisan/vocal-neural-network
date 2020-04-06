@@ -30,7 +30,6 @@ class NeuralNetwork:
         self.train_error = []
         self.save_folder = 'data/'
 
-
     def set_weights(self, nb_source_layer, nb_destination_layer, layer):
     
         random.seed(66+layer)
@@ -46,14 +45,11 @@ class NeuralNetwork:
 
             weights_array.append(single_n_array)
 
-
         return weights_array
 
-    
     def average(self, data):
 
         return sum(data) / len(data)
-
 
     def set_weights_all_layers(self):
 
@@ -210,7 +206,6 @@ class NeuralNetwork:
 
         return all_error_array[::-1]
 
-    
     def calculate_corr(self, n_input, error):
 
         corr = []
@@ -226,7 +221,6 @@ class NeuralNetwork:
 
         return corr
 
-    
     def adjust_weights(self, error):
 
         new_weights = []
@@ -257,7 +251,6 @@ class NeuralNetwork:
 
         return i_new_weights
 
-    
     def learning_phase(self):
 
         for v in self.train_data:
@@ -276,7 +269,6 @@ class NeuralNetwork:
             self.previous_weights.append(self.weights)
             self.weights = self.adjust_weights(error)
 
-    
     def testing_phase(self, data='test'):
 
         test_data = []
@@ -314,7 +306,6 @@ class NeuralNetwork:
 
         return self.average(error_array)
 
-
     def save_nn_status(self):
 
         #weights_json_str = json.dumps(self.previous_weights)
@@ -338,7 +329,6 @@ class NeuralNetwork:
         with open(self.save_folder + "NN_a.json", "w") as text_file:
             print(a_json_str, file=text_file)
 
-
         with open(self.save_folder + "Train_error.json", "w") as text_file:
             print(train_error_json_str, file=text_file)
 
@@ -347,7 +337,6 @@ class NeuralNetwork:
 
         with open(self.save_folder + "Test_error.json", "w") as text_file:
             print(test_error_json_str, file=text_file)
-
 
         with open(self.save_folder + "Train_error_current.json", "w") as text_file:
             print(current_train_error_json_str, file=text_file)
@@ -358,18 +347,18 @@ class NeuralNetwork:
         with open(self.save_folder + "Test_error_current.json", "w") as text_file:
             print(current_test_error_json_str, file=text_file)
 
-
-    def nn_learning_process(self):
+    def nn_learning_process(self, update_status_bar):
 
         random.seed(66)
         random.shuffle(self.train_data)
 
         self.set_weights_all_layers()
         
-        train_error, test_error, vc_error, i = 0, 0 ,0 ,0
+        train_error, test_error, vc_error, self.epoch = 0, 0, 0, 0
         
-        while test_error < 95 and self.epoch <= int(self.settings['Epochs']):
-            
+        while self.epoch < int(self.settings['Epochs']): #and test_error < 95
+
+            update_status_bar("Apprentissage en cours (epoch #" + str(self.epoch + 1) + ") ...")
             self.learning_phase()
 
             train_error = self.testing_phase('train')
@@ -378,6 +367,7 @@ class NeuralNetwork:
             vc_error = self.testing_phase('vc')
             self.vc_error.append(vc_error)
 
+            update_status_bar("Testage en cours (epoch #" + str(self.epoch+1) + ") ...")
             test_error = self.testing_phase()
             self.test_error.append(test_error)
 
@@ -389,22 +379,5 @@ class NeuralNetwork:
 
                 self.corr_fact = 0.01
 
-            self.save_nn_status()
+            #self.save_nn_status()
             self.epoch += 1
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
