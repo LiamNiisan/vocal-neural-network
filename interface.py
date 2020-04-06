@@ -7,12 +7,13 @@ import threading
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
+import subprocess as sp
 
 
 def threadFunction(interface, nbEpoch, errorPlot, update_status_bar):
     apprentissage(errorPlot, update_status_bar)
     interface.errorPlot.plot()
-    #interface.errorPlot.plot_random_number()
+    interface.update_error_data()
     interface.resetButtonState()
 
 
@@ -99,7 +100,7 @@ class Ui_InterfaceWindow():
 
     def setupUi(self, InterfaceWindow):
         InterfaceWindow.setObjectName("InterfaceWindow")
-        InterfaceWindow.resize(830, 475)
+        InterfaceWindow.resize(830, 460)
         self.centralwidget = QtWidgets.QWidget(InterfaceWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.parametreGroupBox = QtWidgets.QGroupBox(self.centralwidget)
@@ -181,33 +182,32 @@ class Ui_InterfaceWindow():
         self.label_9.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.label_9.setObjectName("label_9")
         self.corrFactSpin = QtWidgets.QDoubleSpinBox(self.parametreGroupBox)
-        self.corrFactSpin.setGeometry(QtCore.QRect(160, 60, 69, 26))
+        self.corrFactSpin.setGeometry(QtCore.QRect(360, 60, 69, 26))
         self.corrFactSpin.setMaximum(1.0)
         self.corrFactSpin.setSingleStep(0.05)
         self.corrFactSpin.setProperty("value", 0.1)
         self.corrFactSpin.setObjectName("corrFactSpin")
 
         #----------ERROR PLOT ------------------
-        self.errorPlot = Canvas(InterfaceWindow, width=5, height=4.5, nbEpoch=self.epochSpin.value())
+        self.errorPlot = Canvas(InterfaceWindow, width=5, height=4.3, nbEpoch=self.epochSpin.value())
         self.errorPlot.move(320, 10)
 
         #------------Display results----------- (10, 30, 51, 17)
         self.resultGroupBox = QtWidgets.QGroupBox(self.centralwidget)
-        self.resultGroupBox.setGeometry(QtCore.QRect(10, 320, 301, 130))
-        self.resultGroupBox.setObjectName("ResultsGroupBox")
+        self.resultGroupBox.setGeometry(QtCore.QRect(10, 320, 301, 120))
+        self.resultGroupBox.setObjectName("resultGroupBox")
         self.label_10 = QtWidgets.QLabel(self.resultGroupBox)
-        self.label_10.setGeometry(QtCore.QRect(10, 350, 141, 17))
+        self.label_10.setGeometry(QtCore.QRect(10, 30, 290, 17))
         self.label_10.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.label_10.setObjectName("label_10")
         self.label_11 = QtWidgets.QLabel(self.resultGroupBox)
-        self.label_11.setGeometry(QtCore.QRect(10, 380, 141, 17))
+        self.label_11.setGeometry(QtCore.QRect(10, 60, 290, 17))
         self.label_11.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.label_11.setObjectName("label_11")
         self.label_12 = QtWidgets.QLabel(self.resultGroupBox)
-        self.label_12.setGeometry(QtCore.QRect(10, 410, 141, 17))
+        self.label_12.setGeometry(QtCore.QRect(10, 90, 290, 17))
         self.label_12.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.label_12.setObjectName("label_12")
-
 
         InterfaceWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(InterfaceWindow)
@@ -243,7 +243,7 @@ class Ui_InterfaceWindow():
 
         #results
         self.resultGroupBox.setTitle(_translate("InterfaceWindow", "Resultats"))
-        self.update_error_data(0,0,0)
+        self.update_error_data()
 
     def resetButtonState(self):
         self.runButton.setText("Run")
@@ -252,10 +252,14 @@ class Ui_InterfaceWindow():
     def update_status_bar(self, message):
         self.statusbar.showMessage(message)
 
-    def update_error_data(self, train_data, vc_data, test_data):
+    def update_error_data(self):
+        train_data = int(self.errorPlot.data_train[len(self.errorPlot.data_train)-1])
+        vc_data = int(self.errorPlot.data_vc[len(self.errorPlot.data_vc)-1])
+        test_data = int(self.errorPlot.data_test[len(self.errorPlot.data_test)-1])
         self.label_10.setText("Pourcentage d\'erreur apprentissage: " + str(train_data) + "%")
         self.label_11.setText("Pourcentage d\'erreur validation croisee: " + str(vc_data) + "%")
         self.label_12.setText("Pourcentage d\'erreur test: " + str(test_data) + "%")
+
 
 
 if __name__ == "__main__":

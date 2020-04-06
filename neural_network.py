@@ -381,20 +381,3 @@ class NeuralNetwork:
 
             #self.save_nn_status()
             self.epoch += 1
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
