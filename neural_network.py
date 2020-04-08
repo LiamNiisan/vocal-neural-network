@@ -370,8 +370,7 @@ class NeuralNetwork:
         with open(self.save_folder + "Test_error_current.json", "w") as text_file:
             print(current_test_error_json_str, file=text_file)
 
-
-    def nn_learning_process(self):
+    def nn_learning_process(self, update_status_bar):
 
         #Reordonner les donnees aleatroirement 
         random.seed(66)
@@ -394,6 +393,7 @@ class NeuralNetwork:
             vc_error = self.testing_phase('vc')
             self.vc_error.append(vc_error)
 
+            update_status_bar("Testage en cours (epoch #" + str(self.epoch+1) + ") ...")
             test_error = self.testing_phase()
             self.test_error.append(test_error)
 
@@ -409,20 +409,3 @@ class NeuralNetwork:
             #Sauvegarder les donnees pour y avoir un acces externe 
             self.save_nn_status()
             self.epoch += 1
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
