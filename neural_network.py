@@ -36,6 +36,7 @@ class NeuralNetwork:
         random.seed(66+layer)
 
         weights_array = []
+
         for ns in range(nb_destination_layer):
 
             single_n_array = []
@@ -76,6 +77,7 @@ class NeuralNetwork:
     def weight_sum(self, weight_array):
 
         sum_weight_array = []
+
         for weight in weight_array:
 
             sum_weight = sum(weight)
@@ -87,6 +89,7 @@ class NeuralNetwork:
     def calculate_i(self, source_layer, weight_array, b=0):
 
         i_array = []
+
         for dest_n in weight_array:
 
             i = 0
@@ -102,6 +105,7 @@ class NeuralNetwork:
     def calculate_a(self, i_array):
 
         a_array = []
+
         if self.func == 'sig' :
 
             a_array = self.sig_func(i_array)
@@ -116,6 +120,7 @@ class NeuralNetwork:
     def sig_func(self, i_array):
 
         a_array = []
+
         for i in i_array:
 
             try:
@@ -131,6 +136,7 @@ class NeuralNetwork:
     def der_sig_func(self, a_array):
 
         der_array = []
+        
         for a in a_array:
 
             der_array.append(a * (1 -a))
@@ -153,12 +159,14 @@ class NeuralNetwork:
         i_array_all = []
         a_array_all = []
 
+        #Phase 1, calculer i et a à partir de l'entrée du réseau
         i_array = self.calculate_i(self.current_value, self.weights[0], b)
         i_array_all.append(i_array)
 
         a_array = self.calculate_a(i_array)
         a_array_all.append(a_array)
 
+        #Continuer à calculer pour chaque couche 
         for n in range(1, len(self.weights)):
 
             i_array = self.calculate_i(a_array, self.weights[n], b)
@@ -233,11 +241,11 @@ class NeuralNetwork:
         correction = []
 
         #Phase 3, calcul du facteur de correction
-        #Premierement le facteur est calculé à partir de l'entree
+        #Premierement le facteur est calculé à partir de l'entrée
         corr = self.calculate_corr(self.current_value, error[0])
         correction.append(corr)
 
-        #Le reste du facteur est calcule à partir de la 
+        #Le reste du facteur est calculé 
         for i in range(1, len(error)):
             
             corr = self.calculate_corr(self.a_value[i-1], error[i])
@@ -270,10 +278,14 @@ class NeuralNetwork:
             self.current_value = np.array(v.voice_data)
             self.desired_output = np.array(self.all_desired_output[current_d_output])
             
+            #Phase 1: Activation et fonction d'activation
             self.activation_stage()
 
+            #Phase 2-3: Calcul du signal d'erreur et facteur de correction
             error = self.get_signal_error()
             self.previous_weights.append(self.weights)
+            
+            #Phase 4: Mise a jour
             self.weights = self.adjust_weights(error)
 
     
@@ -361,17 +373,21 @@ class NeuralNetwork:
 
     def nn_learning_process(self):
 
+        #Reordonner les donnees aleatroirement 
         random.seed(66)
         random.shuffle(self.train_data)
 
+        #Assinger une valeur aleatoire au poids
         self.set_weights_all_layers()
         
         train_error, test_error, vc_error, i = 0, 0 ,0 ,0
         
         while test_error < 95 and self.epoch <= int(self.settings['Epochs']):
             
+            #Phase 1 a 4 
             self.learning_phase()
 
+            #Tester l'apprentissage pour cet epoque
             train_error = self.testing_phase('train')
             self.train_error.append(train_error)
 
@@ -381,6 +397,7 @@ class NeuralNetwork:
             test_error = self.testing_phase()
             self.test_error.append(test_error)
 
+            #Sensibiliser le facteur de correction pour mieur trouver le minimum local
             if(test_error < 15 and self.corr_fact != 0.05 and self.corr_fact != 0.01):
 
                 self.corr_fact = 0.05
@@ -389,6 +406,7 @@ class NeuralNetwork:
 
                 self.corr_fact = 0.01
 
+            #Sauvegarder les donnees pour y avoir un acces externe 
             self.save_nn_status()
             self.epoch += 1
 

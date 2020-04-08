@@ -12,8 +12,11 @@ output_filename = __location__ + '/output'
 def get_config():
 
     settings = {}
+
     with open(nn_config_filename, 'r') as file:
+
         for line in file:
+
             name, setting = line.strip().split(" ")
             settings[name] = setting
     
@@ -24,8 +27,11 @@ def get_input_data(nb=60, name='train'):
 
     filename = data_filename + name + '.txt'
     all_voice_data = []
+
     with open(filename, 'r') as file:
+
         for line in file:
+
             dest, voice_string = line.strip().split(":")
             voice_array = voice_string.split(" ")
             voice_data = nvc.InputData(dest, voice_array)
@@ -38,12 +44,16 @@ def get_output_data(file_nb=1):
 
     filename = output_filename + str(file_nb) + '.txt'
     output = []
+
     with open(filename, 'r') as file:
+
         for line in file:
+
             nb, value = line.strip().split(" ")
             output.append(value)
 
     output_list = []
+
     for item in output:
 
         string_output = list(item)
@@ -58,7 +68,9 @@ def get_output_data(file_nb=1):
 def get_static(all_voice_data):
     
     all_voice_data_stat = []
+
     for data in all_voice_data:
+
         stat_voice_data = nvc.InputData(data.des_out, get_stat_data(data.voice_data))
         all_voice_data_stat.append(stat_voice_data)
 
@@ -69,7 +81,9 @@ def get_static(all_voice_data):
 def get_stat_data(data, nb=26):
 
     data_stat = []
+    
     for i in range(1, len(data), nb):
+
         start = i
         end = i + int(nb/2) - 1
         data_stat = data_stat + (data[start:end])
@@ -81,11 +95,15 @@ def get_stat_energy(list_data, nb=26):
 
     energy_stat = []
     for item in list_data:
+
         data = item.voice_data
         item_energy_stat = []
+
         for i in range(1, len(data), nb):
+
             pos = i + int(nb/2)
             item_energy_stat.append(data[pos])
+
         energy_stat.append(item_energy_stat)
 
     return energy_stat
