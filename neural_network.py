@@ -45,10 +45,10 @@ class NeuralNetwork:
                 weight = random.uniform(-0.1,0.1)
                 single_n_array.append(weight)
 
-            weights_array.append(single_n_array)
+            weights_array.append(np.array(single_n_array))
 
 
-        return weights_array
+        return np.array(weights_array)
 
     
     def average(self, data):
@@ -72,7 +72,7 @@ class NeuralNetwork:
         weights = self.set_weights(nb_source_layer_last, self.nb_output, self.h_layers + 1)
         weights_array.append(weights)
 
-        self.weights = weights_array
+        self.weights = np.array(weights_array)
 
     def weight_sum(self, weight_array):
 
@@ -83,7 +83,7 @@ class NeuralNetwork:
             sum_weight = sum(weight)
             sum_weight_array.append(sum_weight)
 
-        return sum_weight_array
+        return np.array(sum_weight_array)
 
 
     def calculate_i(self, source_layer, weight_array, b=0):
@@ -99,7 +99,7 @@ class NeuralNetwork:
 
             i_array.append(i)
 
-        return i_array
+        return np.array(i_array)
 
 
     def calculate_a(self, i_array):
@@ -114,7 +114,7 @@ class NeuralNetwork:
 
             a_array = self.tanh_func(i_array)
 
-        return a_array
+        return np.array(a_array)
 
 
     def sig_func(self, i_array):
@@ -141,7 +141,7 @@ class NeuralNetwork:
 
             der_array.append(a * (1 -a))
 
-        return np.array(der_array)
+        return der_array
 
 
     def der_tanh_func(self, i_array):
@@ -212,7 +212,7 @@ class NeuralNetwork:
                 n_weight = w * last_layer_error
                 error_calc_weight.append(sum(n_weight))
 
-            error = der_func * error_calc_weight
+            error = np.array(der_func) * np.array(error_calc_weight)
             last_layer_error = error
             all_error_array.append(error)
 
@@ -327,11 +327,31 @@ class NeuralNetwork:
         return self.average(error_array)
 
 
+    def np_to_list(self, x_array):
+
+        list_x = []
+
+        if type(x_array) == np.ndarray:
+
+            for x in x_array:
+
+                l_x = x.tolist()
+
+                list_x.append(l_x)
+            
+        else:
+
+            list_x = list(x_array)
+
+        return list_x
+
+
+
     def save_nn_status(self):
 
         #weights_json_str = json.dumps(self.previous_weights)
-        current_weights_json_str = json.dumps(self.weights)
-        a_json_str = json.dumps(self.a_value.tolist())
+        current_weights_json_str = json.dumps(self.np_to_list(self.weights))
+        a_json_str = json.dumps(self.np_to_list(self.a_value))
 
         train_error_json_str = json.dumps(self.train_error)
         vc_error_json_str = json.dumps(self.vc_error)
@@ -370,6 +390,9 @@ class NeuralNetwork:
         with open(self.save_folder + "Test_error_current.json", "w") as text_file:
             print(current_test_error_json_str, file=text_file)
 
+
+
+
     def nn_learning_process(self, update_status_bar):
 
         #Reordonner les donnees aleatroirement 
@@ -379,9 +402,9 @@ class NeuralNetwork:
         #Assinger une valeur aleatoire au poids
         self.set_weights_all_layers()
         
-        train_error, test_error, vc_error, i = 0, 0 ,0 ,0
+        train_error, test_error, vc_error, i = 50, 50 ,50 ,0
         
-        while test_error < 95 and self.epoch <= int(self.settings['Epochs']):
+        while vc_error > 1 and self.epoch <= int(self.settings['Epochs']):
             
             #Phase 1 a 4 
             self.learning_phase()
@@ -393,7 +416,7 @@ class NeuralNetwork:
             vc_error = self.testing_phase('vc')
             self.vc_error.append(vc_error)
 
-            update_status_bar("Testage en cours (epoch #" + str(self.epoch+1) + ") ...")
+            update_status_bar("Test en cours (epoch #" + str(self.epoch+1) + ") ...")
             test_error = self.testing_phase()
             self.test_error.append(test_error)
 

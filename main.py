@@ -4,6 +4,7 @@ import numpy as np
 
 
 def apprentissage(errorPlot, update_status_bar):
+    
     update_status_bar("Obtention des parametres de configuration, les inputs et outputs...")
     settings = ind.get_config()
     input_data_nb = int(settings['Input'])
@@ -34,7 +35,7 @@ def apprentissage(errorPlot, update_status_bar):
     vc_error = np.asarray(neural_net.vc_error)
     test_error = np.asarray(neural_net.test_error)
 
-    if neural_net.func == "sig":
+    if neural_net.func == "tanh":
         vc_error = 100 - vc_error
         test_error = 100 - test_error
         train_error = 100 - train_error

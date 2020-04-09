@@ -95,7 +95,7 @@ def get_static(all_voice_data):
 def get_stat_data(data, nb=26):
 
     data_stat = []
-    
+
     for i in range(1, len(data), nb):
 
         start = i
@@ -108,6 +108,7 @@ def get_stat_data(data, nb=26):
 def get_stat_energy(list_data, nb=26):
 
     energy_stat = []
+  
     for item in list_data:
 
         data = item.voice_data
