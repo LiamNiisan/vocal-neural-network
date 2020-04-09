@@ -12,18 +12,18 @@ class NeuralNetwork:
         self.vc_data = vc_data
         self.test_data = test_data
         self.all_desired_output = output
-        self.desired_output = []
+        self.desired_output = np.array
         self.nb_input = len(train_data[0].voice_data)
         self.nb_output = len(output[0])
         self.h_layers = int(settings['Layers'])
         self.func = settings['Funct']
         self.corr_fact = float(settings['Corr_fact'])
-        self.weights = []
+        self.weights = np.array
         self.previous_weights = []
-        self.current_value = []
-        self.current_output = []
-        self.i_value = []
-        self.a_value = []
+        self.current_value = np.array
+        self.current_output = np.array
+        self.i_value = np.array
+        self.a_value = np.array
         self.epoch = 0
         self.test_error = []
         self.vc_error = []
@@ -50,6 +50,18 @@ class NeuralNetwork:
 
         return np.array(weights_array)
 
+
+    def set_tanh_output(self):
+
+        tanh_output = []
+
+        for o in self.all_desired_output:
+
+            n_o = [-1 if (x == 0) else 1 for x in o]
+            tanh_output.append(n_o)
+            
+        self.all_desired_output = tanh_output
+
     
     def average(self, data):
 
@@ -72,7 +84,8 @@ class NeuralNetwork:
         weights = self.set_weights(nb_source_layer_last, self.nb_output, self.h_layers + 1)
         weights_array.append(weights)
 
-        self.weights = np.array(weights_array)
+        self.weights = weights_array
+
 
     def weight_sum(self, weight_array):
 
@@ -188,7 +201,7 @@ class NeuralNetwork:
         if (self.func == 'sig'):
             error_1 = (self.desired_output - self.current_output) * self.der_sig_func(self.current_output)
         elif (self.func == 'tanh'):
-            error_1 = (self.desired_output - self.current_output) * self.der_tanh_func(self.current_output)
+            error_1 = (self.desired_output - self.current_output) * self.der_tanh_func(self.i_value[self.h_layers])
 
         #Se rappeler de la derniere couche d'erreur calculee
         last_layer_error = error_1
@@ -322,6 +335,10 @@ class NeuralNetwork:
             s_delta = self.average(np.abs(delta))
             error = s_delta * 100
 
+            if self.func == 'tanh':
+
+                error /= 2
+
             error_array.append(error)
 
         return self.average(error_array)
@@ -398,6 +415,10 @@ class NeuralNetwork:
         #Reordonner les donnees aleatroirement 
         random.seed(66)
         random.shuffle(self.train_data)
+
+        if(self.func == 'tanh'):
+
+            self.set_tanh_output()
 
         #Assinger une valeur aleatoire au poids
         self.set_weights_all_layers()
