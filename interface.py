@@ -82,7 +82,9 @@ class Ui_InterfaceWindow():
                     corrFact=self.corrFactSpin.value(),
                     b=1,
                     output=self.outputSpinBox.value(),
-                    epoch=self.epochSpin.value())
+                    epoch=self.epochSpin.value(),
+                    adapt=0,
+                    moment=0)
 
         nbEpoch = self.epochSpin.value()
 

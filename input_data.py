@@ -10,7 +10,7 @@ nn_config_filename = __location__ + '/nn_config.txt'
 output_filename = __location__ + '/output'
 
 
-def write_input(input, layer, nbLayer1, nbLayer2, funct, corrFact, b, output, epoch):
+def write_input(input, layer, nbLayer1, nbLayer2, funct, corrFact, b, output, epoch, adapt, moment):
     f = open(nn_config_filename, "w")
     texte = "Input " + str(input) + "\n"
     texte += "Layers " + str(layer) + "\n"
@@ -21,6 +21,8 @@ def write_input(input, layer, nbLayer1, nbLayer2, funct, corrFact, b, output, ep
     texte += "B " + str(b) + "\n"
     texte += "Output " + str(output) + "\n"
     texte += "Epochs " + str(epoch) + "\n"
+    texte += "Adapt " + str(adapt) + "\n"
+    texte += "Momentum " + str(moment) + "\n"
     f.write(texte)
     f.close()
 
@@ -82,6 +84,8 @@ def get_output_data(file_nb=1):
 
 def get_static(all_voice_data):
     
+    #Cette fonction permet d'obtenir les données statique comme expliqué dans le cours
+    
     all_voice_data_stat = []
 
     for data in all_voice_data:
@@ -106,6 +110,8 @@ def get_stat_data(data, nb=26):
 
 
 def get_stat_energy(list_data, nb=26):
+
+    #Cette fonction permet d'obtenir les données dynamiques
 
     energy_stat = []
   

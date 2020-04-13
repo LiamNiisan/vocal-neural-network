@@ -17,7 +17,9 @@ class NeuralNetwork:
         self.nb_output = len(output[0])
         self.h_layers = int(settings['Layers'])
         self.func = settings['Funct']
-        self.corr_fact = float(settings['Corr_fact'])
+        self.learn_rate = float(settings['Corr_fact'])
+        self.momentum = float(settings['Momentum'])
+        self.last_corr = []
         self.weights = np.array
         self.previous_weights = []
         self.current_value = np.array
@@ -29,10 +31,14 @@ class NeuralNetwork:
         self.vc_error = []
         self.train_error = []
         self.save_folder = 'data/'
+        self.adapt = int(settings['Adapt'])
 
 
     def set_weights(self, nb_source_layer, nb_destination_layer, layer):
     
+        #Cette fonction permet d'initialiser les poids aléatoirement 
+
+        #Faire un seed pour pouvoir obtenir le même nombre aléatoire à chaque fois
         random.seed(66+layer)
 
         weights_array = []
@@ -42,6 +48,7 @@ class NeuralNetwork:
             single_n_array = []
             for nd in range(nb_source_layer):
 
+                #Les poids sont inialisé entre -0.1 et 0.1
                 weight = random.uniform(-0.1,0.1)
                 single_n_array.append(weight)
 
@@ -55,6 +62,7 @@ class NeuralNetwork:
 
         tanh_output = []
 
+        #Changer tous les 0 pour des -1 pour chaque sortie
         for o in self.all_desired_output:
 
             n_o = [-1 if (x == 0) else 1 for x in o]
@@ -85,18 +93,6 @@ class NeuralNetwork:
         weights_array.append(weights)
 
         self.weights = weights_array
-
-
-    def weight_sum(self, weight_array):
-
-        sum_weight_array = []
-
-        for weight in weight_array:
-
-            sum_weight = sum(weight)
-            sum_weight_array.append(sum_weight)
-
-        return np.array(sum_weight_array)
 
 
     def calculate_i(self, source_layer, weight_array, b=0):
@@ -148,6 +144,8 @@ class NeuralNetwork:
 
     def der_sig_func(self, a_array):
 
+        #Cette fonction permet de calculer la dérivée de sig
+
         der_array = []
         
         for a in a_array:
@@ -158,6 +156,8 @@ class NeuralNetwork:
 
 
     def der_tanh_func(self, i_array):
+
+        #Cet fonction permet de calculer la dérivée de tanh
 
         return 1 - ((self.tanh_func(i_array)) ** 2)
 
@@ -232,18 +232,28 @@ class NeuralNetwork:
         return all_error_array[::-1]
 
     
-    def calculate_corr(self, n_input, error):
+    def calculate_corr(self, n_input, error, last_corr):
 
         corr = []
+        i = 0
+        j = 0
 
         for n in n_input:
 
             c = []
             for err in error:
                 
-                c.append(float(n) * err * self.corr_fact)
+                #l'apprentissage en prenant compte du momentum
+                if(last_corr == 0):
+                    c.append((float(n) * err * self.learn_rate))
+                else:
+                    c.append((float(n) * err * self.learn_rate) + (self.momentum * last_corr[i][j]))
 
             corr.append(c)
+
+            j += 1
+
+        i += 1
 
         return corr
 
@@ -251,17 +261,27 @@ class NeuralNetwork:
     def adjust_weights(self, error):
 
         new_weights = []
+        t_new_weights = []
         correction = []
+        t_correction = []
 
         #Phase 3, calcul du facteur de correction
         #Premierement le facteur est calculé à partir de l'entrée
-        corr = self.calculate_corr(self.current_value, error[0])
+        if(self.epoch == 0):
+            corr = self.calculate_corr(self.current_value, error[0], 0)
+        else:
+            corr = self.calculate_corr(self.current_value, error[0], self.last_corr[0])
+
         correction.append(corr)
 
         #Le reste du facteur est calculé 
         for i in range(1, len(error)):
             
-            corr = self.calculate_corr(self.a_value[i-1], error[i])
+            if(self.epoch == 0):
+                corr = self.calculate_corr(self.a_value[i-1], error[i], 0)
+            else:
+                corr = self.calculate_corr(self.a_value[i-1], error[i], self.last_corr[i])
+            
             correction.append(corr)
 
         #Phase 4, le facteur est additionné au poids
@@ -271,12 +291,18 @@ class NeuralNetwork:
             new_weights.append(np.add(w, correction[i]))
 
         #Les matrices des poids sont remises en format standard après avoir été transposée
-        i_new_weights = []
         for w in new_weights:
             
-            i_new_weights.append(list(zip(*w)))
+            t_new_weights.append(list(zip(*w)))
 
-        return i_new_weights
+        for c in correction:
+
+            t_correction.append(list(zip(*c)))
+
+        #On sauvegarde le facteur de correction pour la prochaine epoch
+        self.last_corr = t_correction
+
+        return t_new_weights
 
     
     def learning_phase(self):
@@ -325,16 +351,20 @@ class NeuralNetwork:
                 
                 v.des_out = 0
 
+            #Test de chanque données dans le test
             current_d_output = int(v.des_out)
             self.current_value = np.array(v.voice_data)
             self.desired_output = np.array(self.all_desired_output[current_d_output])
             
+            #Test des données avec le réseau actuel
             self.activation_stage()
 
+            #Calcul de l'erreur
             delta = self.desired_output - self.current_output
             s_delta = self.average(np.abs(delta))
             error = s_delta * 100
 
+            #Puisque tanh va de -1 a 1, l'equart est 2 fois plus grand que sig, donc division par 2
             if self.func == 'tanh':
 
                 error /= 2
@@ -345,6 +375,9 @@ class NeuralNetwork:
 
 
     def np_to_list(self, x_array):
+
+        #Cet fonction sert a transformer les tableaux numpy en list() standard de Python
+        #Cela permet de simplifier la serialization vers json
 
         list_x = []
 
@@ -416,6 +449,7 @@ class NeuralNetwork:
         random.seed(66)
         random.shuffle(self.train_data)
 
+        #La fonction d'activation tanh va de -1 a 1, donc on change les sorties desirées pour -1 au lieu de 0
         if(self.func == 'tanh'):
 
             self.set_tanh_output()
@@ -423,14 +457,15 @@ class NeuralNetwork:
         #Assinger une valeur aleatoire au poids
         self.set_weights_all_layers()
         
-        train_error, test_error, vc_error, i = 50, 50 ,50 ,0
+        #corr_change change a quel pourcentage le taux adaptatif commence 
+        train_error, test_error, vc_error, corr_change = 50, 50 ,50 ,4
         
         while vc_error > 1 and self.epoch <= int(self.settings['Epochs']):
             
             #Phase 1 a 4 
             self.learning_phase()
 
-            #Tester l'apprentissage pour cet epoque
+            #Tester l'apprentissage pour cet epoch
             train_error = self.testing_phase('train')
             self.train_error.append(train_error)
 
@@ -441,15 +476,13 @@ class NeuralNetwork:
             test_error = self.testing_phase()
             self.test_error.append(test_error)
 
-            #Sensibiliser le facteur de correction pour mieur trouver le minimum local
-            if(test_error < 15 and self.corr_fact != 0.05 and self.corr_fact != 0.01):
+            #Sensibiliser le facteur de correction pour mieur trouver le minimum local       
+            if(train_error < corr_change  and self.adapt == 1):
 
-                self.corr_fact = 0.05
+                self.learn_rate /= 2
+                corr_change =- 1
 
-            elif(test_error < 10 and self.corr_fact != 0.01):
 
-                self.corr_fact = 0.01
-
-            #Sauvegarder les donnees pour y avoir un acces externe 
+            #Sauvegarder les donnees pour y avoir un acces externe dans le dossier /data
             self.save_nn_status()
             self.epoch += 1
