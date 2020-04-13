@@ -19,13 +19,11 @@ def threadFunction(interface, nbEpoch, errorPlot, update_status_bar):
 
 class Canvas(FigureCanvas):
     def __init__(self, parent=None, width=5, height=5, dpi=100, nbEpoch=10):
+        # Cette fonction initialise le graphique
+
         fig = Figure(figsize=(width, height), dpi=dpi)
 
         self.axes = fig.add_subplot(111)
-        self.axes.set_title('Erreur en fonction de l\'Epoch')
-        self.axes.set_xlabel('Nombre d\'epoch')
-        self.axes.set_ylabel('Taux d\'erreur(%)')
-        self.axes.set_ylim(ymax=100, ymin=0)
 
         self.number_of_data = 0
         self.x_data = np.array([])
@@ -39,8 +37,17 @@ class Canvas(FigureCanvas):
         FigureCanvas.__init__(self, fig)
         self.setParent(parent)
 
+        self.plot()
+        self.axes.set_ylim(ymin=0, ymax=100)
+
     def plot(self):
+        # Cette fonction affiche les resultats sur le graphique
+
         self.axes.clear()
+        self.axes.set_title('Erreur en fonction de l\'epoch')
+        self.axes.set_xlabel('Nombre d\'epoch')
+        self.axes.set_ylabel('Pourcentage d\'erreur (%)')
+
         self.axes.plot(self.x_data, self.data_train, label='Train data')
         self.axes.plot(self.x_data, self.data_vc, label='VC data')
         self.axes.plot(self.x_data, self.data_test, label='Test data')
@@ -48,32 +55,33 @@ class Canvas(FigureCanvas):
         self.draw()
 
     def fillData(self, data_train, data_vc, data_test, nbEpoch):
+        # Cette fonction remplis les numpy (tableaux) des donnees recoltees
+
         self.update_number_of_data(nbEpoch)
         self.data_vc = data_vc
         self.data_test = data_test
         self.data_train = data_train
 
     def update_number_of_data(self, number_of_data):
+        # Cette fonction change le nombre de epoch sur le graphique et ajuste l'axe des x
         self.number_of_data = number_of_data
         self.x_data = np.arange(stop=self.number_of_data+1, start=1)
         self.axes.set_xlim(xmax=self.number_of_data)
 
-    def plot_random_number(self):
-        x = np.linspace(0, 1, 101)
-        y1 = np.sin(x * np.pi / 2)
-        y2 = np.cos(x * np.pi / 2)
-        self.axes.plot(x, y1, label='sin')
-        self.axes.plot(x, y2, label='cos')
-        self.axes.text(0.08, 0.2, 'sin')
-        self.axes.text(0.9, 0.2, 'cos')
 
 class Ui_InterfaceWindow():
 
     def clickedRunButton(self):
+        # Cette fonction est utilisee lorsque l'utilisateur clique sur le bouton
         self.runButton.setText("Loading...")
         self.runButton.setEnabled(False)
 
-        #configuration des inputs
+        if (self.learningRateRadioOui.isChecked()):
+            adaptatifLearningRate = 1
+        else:
+            adaptatifLearningRate = 0
+
+        # configuration des inputs
         write_input(input=self.inputComboBox.currentText(),
                     layer=self.layerSpin.value(),
                     nbLayer1=self.nbLayer1Spin.value(),
@@ -83,16 +91,18 @@ class Ui_InterfaceWindow():
                     b=1,
                     output=self.outputSpinBox.value(),
                     epoch=self.epochSpin.value(),
-                    adapt=0,
-                    moment=0)
+                    adapt=adaptatifLearningRate,
+                    moment=self.momemtum.value())
 
         nbEpoch = self.epochSpin.value()
 
+        # Creer un thread pour lancer la fonction d'apprentissage, ceci permet au code de continuer a rouler
         threadApprentissage = threading.Thread(target=threadFunction,
                                                args=(self, nbEpoch, self.errorPlot, self.update_status_bar))
         threadApprentissage.start()
 
     def changedLayersValue(self):
+        # Cette fonction affiche ou fait disparaitre le choix du nombre de neuronne pour les autres couches
         if self.layerSpin.value() == 1:
             self.nbLayer2Spin.hide()
             self.label_7.hide()
@@ -101,12 +111,14 @@ class Ui_InterfaceWindow():
             self.label_7.show()
 
     def setupUi(self, InterfaceWindow):
+        # Initialise les differents elements de l'interface graphique (QT Creator)
+
         InterfaceWindow.setObjectName("InterfaceWindow")
-        InterfaceWindow.resize(830, 460)
+        InterfaceWindow.resize(830, 520)
         self.centralwidget = QtWidgets.QWidget(InterfaceWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.parametreGroupBox = QtWidgets.QGroupBox(self.centralwidget)
-        self.parametreGroupBox.setGeometry(QtCore.QRect(10, 10, 301, 301))
+        self.parametreGroupBox.setGeometry(QtCore.QRect(10, 10, 301, 361))
         self.parametreGroupBox.setObjectName("parametreGroupBox")
         self.label_2 = QtWidgets.QLabel(self.parametreGroupBox)
         self.label_2.setGeometry(QtCore.QRect(10, 210, 221, 17))
@@ -129,7 +141,7 @@ class Ui_InterfaceWindow():
         self.label_6.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.label_6.setObjectName("label_6")
         self.runButton = QtWidgets.QPushButton(self.parametreGroupBox)
-        self.runButton.setGeometry(QtCore.QRect(10, 270, 89, 25))
+        self.runButton.setGeometry(QtCore.QRect(10, 330, 89, 25))
         self.runButton.setObjectName("runButton")
         self.runButton.clicked.connect(self.clickedRunButton)
         self.nbLayer1Spin = QtWidgets.QSpinBox(self.parametreGroupBox)
@@ -169,7 +181,7 @@ class Ui_InterfaceWindow():
         self.layerSpin = QtWidgets.QSpinBox(self.parametreGroupBox)
         self.layerSpin.setGeometry(QtCore.QRect(160, 180, 48, 26))
         self.layerSpin.setMinimum(1)
-        self.layerSpin.setMaximum(2)
+        self.layerSpin.setMaximum(10)
         self.layerSpin.setProperty("value", 2)
         self.layerSpin.setObjectName("layerSpin")
         self.layerSpin.valueChanged.connect(self.changedLayersValue)
@@ -184,19 +196,44 @@ class Ui_InterfaceWindow():
         self.label_9.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.label_9.setObjectName("label_9")
         self.corrFactSpin = QtWidgets.QDoubleSpinBox(self.parametreGroupBox)
-        self.corrFactSpin.setGeometry(QtCore.QRect(360, 60, 69, 26))
+        self.corrFactSpin.setGeometry(QtCore.QRect(130, 60, 69, 26))
         self.corrFactSpin.setMaximum(1.0)
         self.corrFactSpin.setSingleStep(0.05)
         self.corrFactSpin.setProperty("value", 0.1)
         self.corrFactSpin.setObjectName("corrFactSpin")
+        self.label_13 = QtWidgets.QLabel(self.parametreGroupBox)
+        self.label_13.setGeometry(QtCore.QRect(10, 270, 221, 17))
+        self.label_13.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.label_13.setObjectName("label_13")
+        self.label_14 = QtWidgets.QLabel(self.parametreGroupBox)
+        self.label_14.setGeometry(QtCore.QRect(10, 300, 221, 17))
+        self.label_14.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.label_14.setObjectName("label_14")
+        self.momemtum = QtWidgets.QDoubleSpinBox(self.parametreGroupBox)
+        self.momemtum.setGeometry(QtCore.QRect(130, 270, 69, 26))
+        self.momemtum.setMaximum(1.0)
+        self.momemtum.setSingleStep(0.05)
+        self.momemtum.setProperty("value", 0.5)
+        self.momemtum.setObjectName("momemtum")
+        self.learningRateRadioOui = QtWidgets.QRadioButton(
+            self.parametreGroupBox)
+        self.learningRateRadioOui.setGeometry(QtCore.QRect(180, 300, 69, 26))
+        self.learningRateRadioOui.setChecked(True)
+        self.learningRateRadioOui.setObjectName("learningRateRadioOui")
+        self.learningRateRadioNon = QtWidgets.QRadioButton(
+            self.parametreGroupBox)
+        self.learningRateRadioNon.setGeometry(QtCore.QRect(220, 300, 69, 26))
+        self.learningRateRadioNon.setChecked(False)
+        self.learningRateRadioNon.setObjectName("learningRateRadioNon")
 
-        #----------ERROR PLOT ------------------
-        self.errorPlot = Canvas(InterfaceWindow, width=5, height=4.3, nbEpoch=self.epochSpin.value())
-        self.errorPlot.move(320, 10)
+        # ----------ERROR PLOT ------------------
+        self.errorPlot = Canvas(InterfaceWindow, width=5,
+                                height=4.9, nbEpoch=self.epochSpin.value())
+        self.errorPlot.move(330, 10)
 
-        #------------Display results----------- (10, 30, 51, 17)
+        # ------------Display results-----------
         self.resultGroupBox = QtWidgets.QGroupBox(self.centralwidget)
-        self.resultGroupBox.setGeometry(QtCore.QRect(10, 320, 301, 120))
+        self.resultGroupBox.setGeometry(QtCore.QRect(10, 380, 301, 120))
         self.resultGroupBox.setObjectName("resultGroupBox")
         self.label_10 = QtWidgets.QLabel(self.resultGroupBox)
         self.label_10.setGeometry(QtCore.QRect(10, 30, 290, 17))
@@ -225,13 +262,19 @@ class Ui_InterfaceWindow():
         QtCore.QMetaObject.connectSlotsByName(InterfaceWindow)
 
     def retranslateUi(self, InterfaceWindow):
+        # Ajuste les texts des elements de l'interface graphique (QR Creator)
         _translate = QtCore.QCoreApplication.translate
-        InterfaceWindow.setWindowTitle(_translate("InterfaceWindow", "MainWindow"))
-        self.parametreGroupBox.setTitle(_translate("InterfaceWindow", "Paramètres"))
-        self.label_2.setText(_translate("InterfaceWindow", "Nombre de neuronne couche 1 :"))
+        InterfaceWindow.setWindowTitle(
+            _translate("InterfaceWindow", "MainWindow"))
+        self.parametreGroupBox.setTitle(
+            _translate("InterfaceWindow", "Paramètres"))
+        self.label_2.setText(_translate(
+            "InterfaceWindow", "Nombre de neuronne de la couche 1 :"))
         self.label_3.setText(_translate("InterfaceWindow", "Nombre d\'epoch"))
-        self.label_4.setText(_translate("InterfaceWindow", "Fichier d\'output"))
-        self.label_5.setText(_translate("InterfaceWindow", "Fonction d\'activation"))
+        self.label_4.setText(_translate(
+            "InterfaceWindow", "Fichier d\'output"))
+        self.label_5.setText(_translate(
+            "InterfaceWindow", "Fonction d\'activation"))
         self.label_6.setText(_translate("InterfaceWindow", "Input"))
         self.runButton.setText(_translate("InterfaceWindow", "Run"))
         self.funcComboBox.setItemText(0, _translate("InterfaceWindow", "tanh"))
@@ -239,32 +282,50 @@ class Ui_InterfaceWindow():
         self.inputComboBox.setItemText(0, _translate("InterfaceWindow", "40"))
         self.inputComboBox.setItemText(1, _translate("InterfaceWindow", "50"))
         self.inputComboBox.setItemText(2, _translate("InterfaceWindow", "60"))
-        self.label_7.setText(_translate("InterfaceWindow", "Nombre de neuronne couche 2 :"))
-        self.label_8.setText(_translate("InterfaceWindow", "Nombre de couches"))
-        self.label_9.setText(_translate("InterfaceWindow", "Taux d\'apprentissage"))
+        self.label_7.setText(_translate(
+            "InterfaceWindow", "Nombre de neuronne des autres couches :"))
+        self.label_8.setText(_translate(
+            "InterfaceWindow", "Nombre de couches"))
+        self.label_9.setText(_translate(
+            "InterfaceWindow", "Taux d\'apprentissage"))
+        self.label_13.setText(_translate(
+            "InterfaceWindow", "Momemtum: "))
+        self.label_14.setText(_translate(
+            "InterfaceWindow", "Taux d\'apprentissage adaptatif: "))
+        self.learningRateRadioOui.setText("Oui")
+        self.learningRateRadioNon.setText("Non")
 
-        #results
-        self.resultGroupBox.setTitle(_translate("InterfaceWindow", "Resultats"))
+        # results
+        self.resultGroupBox.setTitle(
+            _translate("InterfaceWindow", "Résultats"))
         self.update_error_data()
 
     def resetButtonState(self):
+        # Remet le bouton Run a son etat initial
         self.runButton.setText("Run")
         self.runButton.setEnabled(True)
 
     def update_status_bar(self, message):
+        # Permet d'afficher l'etat d'avancement du code
         self.statusbar.showMessage(message)
 
     def update_error_data(self):
-        train_data = int(self.errorPlot.data_train[len(self.errorPlot.data_train)-1])
+        # Affiche les Taux d'erreur final
+        train_data = int(
+            self.errorPlot.data_train[len(self.errorPlot.data_train)-1])
         vc_data = int(self.errorPlot.data_vc[len(self.errorPlot.data_vc)-1])
-        test_data = int(self.errorPlot.data_test[len(self.errorPlot.data_test)-1])
-        self.label_10.setText("Pourcentage d\'erreur apprentissage: " + str(train_data) + "%")
-        self.label_11.setText("Pourcentage d\'erreur validation croisee: " + str(vc_data) + "%")
-        self.label_12.setText("Pourcentage d\'erreur test: " + str(test_data) + "%")
-
+        test_data = int(
+            self.errorPlot.data_test[len(self.errorPlot.data_test)-1])
+        self.label_10.setText(
+            "Pourcentage d\'erreur de l\'apprentissage: " + str(train_data) + "%")
+        self.label_11.setText(
+            "Pourcentage d\'erreur de la validation croisée: " + str(vc_data) + "%")
+        self.label_12.setText(
+            "Pourcentage d\'erreur des tests: " + str(test_data) + "%")
 
 
 if __name__ == "__main__":
+    # fonction main lorsqu'on utilise l'interface graphique
     import sys
     app = QtWidgets.QApplication(sys.argv)
     InterfaceWindow = QtWidgets.QMainWindow()
