@@ -12,5 +12,9 @@ Pour executer le code:
 
 Executer le fichier interface.py avec python dans le command line (python, py, python3) ou avec un IDE
 
+Les données:
+
+À chaque epoch, les données seront enregistrées en format text dans le dossier data/
+
 
 
