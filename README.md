@@ -1,6 +1,7 @@
 # vocal-neural-network
 
 The goal of this project is to create a neural network from scratch.
+
 The built neural network is then used to learn vocal patterns and predict spoken numbers.
 
 ### Runtime
