@@ -1,20 +1,26 @@
 # vocal-neural-network
 
-Dependencies:
+The goal of this project is to create a neural network from scratch.
+The built neural network is then used to learn vocal patterns and predict spoken numbers.
+
+### Runtime
+#### Dependencies
 
 numpy
 matplotlib
 pyqt
 
-Installer avec: pip install "nom" ou pip3 install "nom"
+#### Parameters
 
-Pour executer le code:
+The parameters can be changed using the interface once the program is executed.
 
-Executer le fichier interface.py avec python dans le command line (python, py, python3) ou avec un IDE
+#### Execution
 
-Les données:
+Run the `interface.py` file to start the program.
 
-À chaque epoch, les données seront enregistrées en format text dans le dossier data/
+#### Log
+
+At each epoch, the state of the model will be saved in `data/`
 
 
 
